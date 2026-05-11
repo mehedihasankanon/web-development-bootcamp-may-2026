@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum AccessLevel {
+  PRIVATE
+  PUBLIC
+  RESTRICTED
+}
+
+enum Permission {
+  VIEW
+  EDIT
+}
+
+// --- Models ---
+
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String // hashed password
+  name     String?
+
+  // fileowner, folderowner works as a foreign key like constraint here
+  files        File[]         @relation("FileOwner")
+  folders      Folder[]       @relation("FolderOwner")
+  sharedWithMe SharedAccess[]
+
+  // usage limit
+  maxStorageSpace  Int // in bytes
+  usedStorageSpace Int // in bytes
+}
+
+model Folder {
+  id   String @id @default(uuid())
+  name String
+
+  ownerId String
+  owner   User   @relation("FolderOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // nesting: self-relation for subfolders
+  parentId String?
+  parent   Folder?  @relation("SubFolders", fields: [parentId], references: [id])
+  children Folder[] @relation("SubFolders")
+
+  files File[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model File {
+  id      String @id @default(uuid())
+  name    String
+  fileKey String @unique // uploadthing file key
+  url     String // uploadthing url
+  size    Int // in bytes
+  type    String
+
+  access AccessLevel @default(PRIVATE)
+
+  // Ownership
+  ownerId String
+  owner   User   @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Location
+  folderId String?
+  folder   Folder? @relation(fields: [folderId], references: [id])
+
+  // Sharing Logic
+  sharedWith SharedAccess[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([fileKey])
+}
+
+model SharedAccess {
+  id String @id @default(uuid())
+
+  fileId String
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  permission Permission @default(VIEW)
+
+  @@unique([fileId, userId]) // a user can only have one access record per file
+}
