@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -12,8 +13,9 @@ model User {
   email            String         @unique
   password         String
   name             String?
-  maxStorageSpace  Int
-  usedStorageSpace Int
+  resetToken       String?
+  maxStorageSpace  Int @default(10000000) // E.g., 10MB
+  usedStorageSpace Int @default(0)
   files            File[]         @relation("FileOwner")
   folders          Folder[]       @relation("FolderOwner")
   sharedWithMe     SharedAccess[]

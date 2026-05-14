@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 import { createRouteHandler } from "uploadthing/express";
 import { uploadRouter } from "./routes/uploadRouter.js";
+import { authRouter } from "./routes/authRouter.js";
 
 const __dirname = path.resolve();
 
@@ -39,6 +40,9 @@ app.use("/api/upload",
         }
     })
 );
+
+app.use("/api/auth", authRouter);
+
 
 
 
