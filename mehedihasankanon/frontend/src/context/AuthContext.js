@@ -11,6 +11,8 @@
 // usestate and useeffect -> used for managing state and side effects
 import { createContext, useContext, useState, useEffect } from "react";
 
+const AuthContext = createContext();
+
 // router
 import { useRouter } from "next/navigation";
 

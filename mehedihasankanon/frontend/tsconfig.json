@@ -19,7 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "src/app/page.jsx", "src/app/auth/page.jsx", "src/app/dashboard/page.jsx", "src/components/footer.jsx", "src/components/featuressection.jsx", "src/components/herosection.jsx"  ],
   "exclude": ["node_modules"]
 }
