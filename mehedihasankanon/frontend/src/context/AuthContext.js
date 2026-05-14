@@ -67,6 +67,8 @@ export function AuthProvider({ children }) {
     const nextPath = getSafeNextPath();
     if (nextPath) {
       router.replace(nextPath);
+    } else {
+      router.push("/dashboard");
     }
   };
 
@@ -74,7 +76,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
-    router.push("/auth");
+    router.push("/");
   };
 
   const register = async (name, email, password) => {
@@ -86,6 +88,8 @@ export function AuthProvider({ children }) {
     const nextPath = getSafeNextPath();
     if (nextPath) {
       router.replace(nextPath);
+    } else {
+      router.push("/dashboard");
     }
   };
 

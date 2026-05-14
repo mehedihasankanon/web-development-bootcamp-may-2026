@@ -106,15 +106,42 @@ export const forgotPassword = async (req, res) => {
     }
 };
 
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, token, newPassword } = req.body;
+
+        // Find user by email        
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || user.resetToken !== token) {
+            return res.status(400).json({ message: "Invalid token or email" });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password in database
+        await prisma.user.update({
+            where: { email },
+            data: { password: hashedPassword, resetToken: null },
+        });
+
+        res.json({ message: "Password reset successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to reset password" });
+    }
+};
+
 export const changePassword = async (req, res) => {
     try {
-        const { oldPassword, newPassword, confirmPassword } = req.body;
+        const { User } = req.user;
 
-        // Find user by email
-        const user = await prisma.user.findUnique({ where: { email } });
+        // Find user email and password by id
+        const user = await prisma.user.findUnique({ where: { id: User.id } });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
+
 
         // Check old password
         const isMatch = await bcrypt.compare(oldPassword, user.password);
@@ -127,7 +154,7 @@ export const changePassword = async (req, res) => {
 
         // Update password in database
         await prisma.user.update({
-            where: { email },
+            where: { id: User.id },
             data: { password: hashedPassword },
         });
 
@@ -137,3 +164,35 @@ export const changePassword = async (req, res) => {
         res.status(500).json({ message: "Failed to change password" });
     }
 };
+
+
+
+export const getProfile = async (req, res) => {
+    
+    const { User } = req.user;
+
+    try {
+        // Find user email and password by id
+        const user = await prisma.user.findUnique({ where: { id: User.id } });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+
+        res.json({
+            message: "Profile fetched successfully",
+            // strip out sensitive info and send the necessary info to frontend
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                maxStorageSpace: user.maxStorageSpace,
+                usedStorageSpace: user.usedStorageSpace,
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching profile:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}

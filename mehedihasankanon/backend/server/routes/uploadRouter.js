@@ -1,4 +1,5 @@
 import { createUploadthing } from "uploadthing/express";
+import { UTApi } from "uploadthing/server";
 
 const f = createUploadthing();
 
@@ -16,7 +17,7 @@ export default {
     // this acts as a webhook that prompts the ORM to store the metadata
     // in the database as per our schema design
 
-    async ({ metadata, file }) => {
+    async ({ req, metadata, file }) => {
       console.log("Upload completed", file);
 
       try {
@@ -27,7 +28,7 @@ export default {
             url: file.url,
             size: file.size,
             type: file.type,
-            ownerId: "PLACEHOLDER", // TODO:replace this after auth is ready
+            ownerId: req.user.id, // we pass this from the frontend when we initialize the upload
           },
         });
       } catch (error) {
@@ -36,4 +37,14 @@ export default {
       }
     },
   ),
+};
+
+export const deleteFileFromUploadThing = async (fileKey) => {
+  try {
+    await utapi.deleteFiles([fileKey]);
+    console.log("File deleted from UploadThing:", fileKey);
+  } catch (error) {
+    console.log("Failed to delete file from UploadThing:", error);
+    throw new Error("Failed to delete file from UploadThing");
+  }
 };
