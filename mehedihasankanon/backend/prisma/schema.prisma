@@ -1,11 +1,9 @@
 generator client {
   provider = "prisma-client-js"
-  output = "./generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -14,7 +12,7 @@ model User {
   password         String
   name             String?
   resetToken       String?
-  maxStorageSpace  Int @default(10000000) // E.g., 10MB
+  maxStorageSpace  Int @default(500000000) 
   usedStorageSpace Int @default(0)
   files            File[]         @relation("FileOwner")
   folders          Folder[]       @relation("FolderOwner")

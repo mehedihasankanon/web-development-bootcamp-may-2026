@@ -1,22 +1,22 @@
 /**
- * 
+ *
  * pasted this JWT setup code from my old academic project:
- * 
+ *
  * https://github.com/mehedihasankanon/MARS/blob/main/mars/backend/server/middleware/jwt.js
- * 
+ *
  */
 
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET environment variable is not set");
 }
 
-const JWT_SECRET = process.env.JWT_SECRET;
+export const JWT_SECRET = process.env.JWT_SECRET;
 
-exports.JWT_SECRET = JWT_SECRET;
+// exports.JWT_SECRET = JWT_SECRET;
 
-exports.authenticateToken = (req, res, next) => {
+export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 

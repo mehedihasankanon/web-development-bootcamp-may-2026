@@ -1,42 +1,40 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Mail, Lock } from 'lucide-react'
-import { fieldClass } from '@/lib/utils'
+import Link from "next/link";
 
+import { useState } from "react";
+import { Mail, Lock } from "lucide-react";
+import { fieldClass } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 export function SignInForm() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
-  function handleSubmit(e) {
-    e.preventDefault()
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-    setError(false)
-    setSuccess(false)
+    setError("");
+    setLoading(true);
 
-    // handle sign in logic here
-
-    
+    try {
+      await login(email, password);
+    } catch (err) {
+      setError(
+        // backend error message or fallback
+        err.response?.data?.message || "Invalid credentials. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
-
-
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <p className="text-center text-xs text-red-500">
-          Invalid credentials. Please try again.
-        </p>
-      )}
-
-      {success && (
-        <p className="text-center text-xs text-zinc-400">
-          Signed in successfully.
-        </p>
-      )}
+      {error && <p className="text-center text-xs text-red-500">{error}</p>}
 
       {/* Email */}
       <div className="relative">
@@ -47,8 +45,8 @@ export function SignInForm() {
           placeholder="Email"
           value={email}
           onChange={(e) => {
-            setEmail(e.target.value)
-            setError(false)
+            setEmail(e.target.value);
+            setError(false);
           }}
           className={fieldClass(error)}
           required
@@ -65,8 +63,8 @@ export function SignInForm() {
           placeholder="Password"
           value={password}
           onChange={(e) => {
-            setPassword(e.target.value)
-            setError(false)
+            setPassword(e.target.value);
+            setError(false);
           }}
           className={fieldClass(error)}
           required
@@ -76,11 +74,13 @@ export function SignInForm() {
 
       <button
         type="submit"
-        className="mt-2 w-full border border-white bg-white py-2.5 text-sm font-semibold tracking-tighter text-black transition-all duration-300 hover:bg-white hover:shadow-[0_0_18px_4px_rgba(255,255,255,0.35)] focus:outline-none"
+        disabled={loading}
+        className="mt-2 w-full border border-white bg-white py-2.5 text-sm font-semibold tracking-tighter 
+        text-black transition-all duration-300 hover:bg-white hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
+        hover:shadow-[0_0_18px_4px_rgba(255,255,255,0.35)] focus:outline-none"
       >
-        Sign In
+        {loading ? "Signing in..." : "Sign In"}
       </button>
-
     </form>
-  )
+  );
 }

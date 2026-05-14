@@ -2,7 +2,7 @@ import crypto from "crypto"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken";
 
-import { sendResetLink } from "../utils/resend.js";
+import { sendResetEmail } from "../utils/resend.js";
 
 import { prisma } from "../database/db.js";
 
@@ -97,7 +97,7 @@ export const forgotPassword = async (req, res) => {
 
         // Send reset link via email
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}&email=${email}`;
-        await sendResetLink(email, resetLink);
+        await sendResetEmail(email, resetLink);
 
         res.json({ message: "Reset link sent to email" });
     } catch (err) {

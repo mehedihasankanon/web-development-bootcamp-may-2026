@@ -1,13 +1,32 @@
+import { Resend } from "resend";
 
-import { Resend } from 'resend';
+import dotenv from "dotenv";
+import path from "path";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const __dirname = path.resolve();
 
-const sendResetEmail = async (email, resetLink) => {
-  await resend.emails.send({
+dotenv.config({
+  path: path.resolve(__dirname, "../.env"),
+});
+
+let resend;
+
+const getResend = () => {
+  if (!resend) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not set in .env file");
+    }
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+};
+
+export const sendResetEmail = async (email, resetLink) => {
+  const client = getResend();
+  await client.emails.send({
     from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM_EMAIL}>`,
     to: email,
-    subject: 'Reset your fylestash password',
+    subject: "Reset your fylestash password",
     html: `
       <div style="font-family: sans-serif; background: #000; color: #fff; padding: 40px; text-align: center;">
         <h1 style="letter-spacing: -0.05em;">fylestash</h1>
@@ -18,5 +37,3 @@ const sendResetEmail = async (email, resetLink) => {
     `,
   });
 };
-
-export default { sendResetEmail };

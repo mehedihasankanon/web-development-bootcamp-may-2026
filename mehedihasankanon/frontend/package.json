@@ -11,6 +11,9 @@
   "dependencies": {
     "@uploadthing/react": "^6.6.0",
     "@vercel/analytics": "^2.0.1",
+    "axios": "^1.16.1",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.14.0",
     "next": "^16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
