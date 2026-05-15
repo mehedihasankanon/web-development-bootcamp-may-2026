@@ -34,7 +34,7 @@
     */
 
 import { prisma } from "../database/db.js";
-import { deleteFileFromUploadThing } from "../routes/uploadRouter.js";
+import { deleteFileFromUploadThing, renameFileInUploadThing } from "../routes/uploadRouter.js";
 
 // list all files
 export const listFiles = async (req, res) => {
@@ -131,6 +131,37 @@ export const deleteFile = async (req, res) => {
     });
 
     res.json({ message: "File deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// rename file
+export const renameFile = async (req, res) => {
+  try {
+    const fileId = req.params.fileId;
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "File name is required" });
+    }
+
+    const file = await prisma.file.findUnique({
+      where: { id: fileId },
+    });
+
+    if (!file || file.ownerId !== req.user.id) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
+    await renameFileInUploadThing({ key: file.fileKey, newName: name.trim() });
+
+    await prisma.file.update({
+      where: { id: fileId },
+      data: { name: name.trim() },
+    });
+
+    res.json({ message: "File renamed successfully", name: name.trim() });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

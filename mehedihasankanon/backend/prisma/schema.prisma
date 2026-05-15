@@ -28,7 +28,7 @@ model Folder {
   updatedAt DateTime @updatedAt
   files     File[]
   owner     User     @relation("FolderOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  parent    Folder?  @relation("SubFolders", fields: [parentId], references: [id])
+  parent    Folder?  @relation("SubFolders", fields: [parentId], references: [id], onDelete: Cascade)
   children  Folder[] @relation("SubFolders")
 
   @@index([ownerId])
@@ -46,7 +46,7 @@ model File {
   folderId   String?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
-  folder     Folder?        @relation(fields: [folderId], references: [id])
+  folder     Folder?        @relation(fields: [folderId], references: [id], onDelete: Cascade)
   owner      User           @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   sharedWith SharedAccess[]
 

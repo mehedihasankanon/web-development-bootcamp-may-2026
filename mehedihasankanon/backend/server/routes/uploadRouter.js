@@ -96,12 +96,25 @@ export default {
     ),
 };
 
-export const deleteFileFromUploadThing = async (fileKey) => {
+export const deleteFileFromUploadThing = async (fileKeys) => {
   try {
-    await utapi.deleteFiles([fileKey]);
-    console.log("File deleted from UploadThing:", fileKey);
+    const keys = Array.isArray(fileKeys) ? fileKeys : [fileKeys];
+    await utapi.deleteFiles(keys);
+    console.log("Files deleted from UploadThing:", keys);
   } catch (error) {
-    console.log("Failed to delete file from UploadThing:", error);
-    throw new Error("Failed to delete file from UploadThing");
+    console.log("Failed to delete files from UploadThing:", error);
+    throw new Error("Failed to delete files from UploadThing");
+  }
+};
+
+export const renameFileInUploadThing = async ({ key, newName }) => {
+  try {
+    const renameFile = await utapi.renameFiles([
+      { fileKey: key, newName: newName }
+    ]);
+    console.log("File renamed in UploadThing:", renameFile);
+  } catch (error) {
+    console.log("Failed to rename file in UploadThing:", error);
+    throw new Error("Failed to rename file in UploadThing");
   }
 };

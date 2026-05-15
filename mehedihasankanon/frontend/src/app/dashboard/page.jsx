@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [newSubfolderOpen, setNewSubfolderOpen] = useState(false);
+  const [folderOptionsOpen, setFolderOptionsOpen] = useState(null);
   const [folderSubmitting, setFolderSubmitting] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [subfolderName, setSubfolderName] = useState("");
@@ -241,6 +242,9 @@ export default function DashboardPage() {
       ) {
         setOptionsOpen(false);
       }
+      if (!event.target.closest(".folder-options-container")) {
+        setFolderOptionsOpen(null);
+      }
     };
 
     document.addEventListener("mousedown", handleOutsideClick);
@@ -384,6 +388,45 @@ export default function DashboardPage() {
     } catch (err) {
       setFiles(previous);
       showToast("Failed to update access.", "error");
+    }
+  };
+
+  const handleRenameFile = async (file, newName) => {
+    try {
+      const response = await api.patch(`${FILES_API_BASE}/rename/${file.id}`, { name: newName });
+      setFiles((prev) =>
+        prev.map((item) => (item.id === file.id ? { ...item, name: response?.data?.name || newName } : item)),
+      );
+      showToast("File renamed.");
+    } catch (err) {
+      showToast(err?.response?.data?.error || "Failed to rename file.", "error");
+    }
+  };
+
+  const handleRenameFolder = async (folder, newName) => {
+    try {
+      const response = await api.patch(`${FOLDERS_API_BASE}/rename/${folder.id}`, { name: newName });
+      setFolders((prev) =>
+        prev.map((item) => (item.id === folder.id ? { ...item, name: response?.data?.name || newName } : item)),
+      );
+      showToast("Folder renamed.");
+    } catch (err) {
+      showToast(err?.response?.data?.message || "Failed to rename folder.", "error");
+    }
+  };
+
+  const handleDeleteFolder = async (folder) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${folder.name}" and ALL its contents? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`${FOLDERS_API_BASE}/delete/${folder.id}`);
+      setFolders((prev) => prev.filter((item) => item.id !== folder.id));
+      showToast("Folder deleted.");
+    } catch (err) {
+      showToast(err?.response?.data?.message || "Failed to delete folder.", "error");
     }
   };
 
@@ -545,24 +588,69 @@ export default function DashboardPage() {
                     </p>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {filteredFolders.map((folder) => (
-                        <button
+                        <div
                           key={folder.id}
-                          type="button"
-                          onClick={() => setCurrentFolderId(folder.id)}
-                          className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-black/30 px-4 py-3 text-left text-sm text-zinc-200 transition hover:border-white/40"
+                          className="relative flex items-center justify-between rounded-xl border border-zinc-800 bg-black/30 px-4 py-3 transition hover:border-white/40 group"
                         >
-                          <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-800 bg-black/40">
-                            <Folder className="h-5 w-5 text-zinc-200" />
-                          </span>
-                          <div>
-                            <p className="text-sm font-semibold text-white">
-                              {folder.name}
-                            </p>
-                            <p className="text-xs text-zinc-500">
-                              {folder.parentId ? "Subfolder" : "Folder"}
-                            </p>
+                          <button
+                            type="button"
+                            onClick={() => setCurrentFolderId(folder.id)}
+                            className="flex flex-1 items-center gap-3 text-left"
+                          >
+                            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-800 bg-black/40">
+                              <Folder className="h-5 w-5 text-zinc-200" />
+                            </span>
+                            <div>
+                              <p className="text-sm font-semibold text-white">
+                                {folder.name}
+                              </p>
+                              <p className="text-xs text-zinc-500">
+                                {folder.parentId ? "Subfolder" : "Folder"}
+                              </p>
+                            </div>
+                          </button>
+                          <div className="relative folder-options-container">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFolderOptionsOpen(folderOptionsOpen === folder.id ? null : folder.id);
+                              }}
+                              className="p-2 text-zinc-500 hover:text-white transition"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                            {folderOptionsOpen === folder.id && (
+                              <div className="absolute right-0 top-full mt-2 w-32 z-10 overflow-hidden rounded-lg border border-zinc-800 bg-black/90 shadow-lg">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFolderOptionsOpen(null);
+                                    const newName = window.prompt("Enter new folder name:", folder.name);
+                                    if (newName && newName.trim() !== folder.name) {
+                                      handleRenameFolder(folder, newName.trim());
+                                    }
+                                  }}
+                                  className="flex w-full items-center px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/10 hover:text-white"
+                                >
+                                  Rename
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFolderOptionsOpen(null);
+                                    handleDeleteFolder(folder);
+                                  }}
+                                  className="flex w-full items-center px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -599,6 +687,7 @@ export default function DashboardPage() {
                         files={filteredFiles}
                         onCopyLink={handleCopyLink}
                         onToggleAccess={handleToggleAccess}
+                        onRename={handleRenameFile}
                         onDelete={handleDelete}
                       />
                     </div>

@@ -2,6 +2,7 @@
 
 import {
   Copy,
+  Edit,
   File,
   FileArchive,
   FileAudio,
@@ -66,7 +67,7 @@ const getFileIcon = (file) => {
 };
 
 
-export function FileTable({ files, onCopyLink, onToggleAccess, onDelete }) {
+export function FileTable({ files, onCopyLink, onToggleAccess, onRename, onDelete }) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-800 bg-black/30">
       <div className="overflow-x-auto">
@@ -131,6 +132,19 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onDelete }) {
                       >
                         <Copy className="h-3.5 w-3.5" />
                         Copy Link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newName = window.prompt("Enter new file name: (WARNING: DO NOT CHANGE FILE EXTENSION!)", file.name);
+                          if (newName && newName.trim() !== file.name) {
+                            onRename?.(file, newName.trim());
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        Rename
                       </button>
                       <button
                         type="button"
