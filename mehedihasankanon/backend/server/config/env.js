@@ -1,3 +1,5 @@
+// this loads at the very beginning of server.js
+
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";

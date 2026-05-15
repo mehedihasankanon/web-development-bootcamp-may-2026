@@ -2,10 +2,20 @@ import { prisma } from "../database/db.js";
 
 export const listFolders = async (req, res) => {
   try {
+    const { parentId } = req.query;
+
+    const whereClause = {
+      ownerId: req.user.id,
+    };
+
+    if (parentId === "root") {
+      whereClause.parentId = null;
+    } else if (parentId) {
+      whereClause.parentId = parentId;
+    }
+
     const folders = await prisma.folder.findMany({
-      where: {
-        ownerId: req.user.id,
-      },
+      where: whereClause,
       orderBy: {
         createdAt: "desc",
       },

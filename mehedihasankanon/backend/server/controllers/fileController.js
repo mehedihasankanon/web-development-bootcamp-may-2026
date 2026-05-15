@@ -39,9 +39,22 @@ import { deleteFileFromUploadThing } from "../routes/uploadRouter.js";
 // list all files
 export const listFiles = async (req, res) => {
   try {
+    const { folderId } = req.query;
+
+    const whereClause = {
+      ownerId: req.user.id,
+    };
+
+    if (folderId === "root") {
+      whereClause.folderId = null;
+    } else if (folderId) {
+      whereClause.folderId = folderId;
+    }
+
     const files = await prisma.file.findMany({
-      where: {
-        ownerId: req.user.id,
+      where: whereClause,
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
@@ -54,6 +67,7 @@ export const listFiles = async (req, res) => {
       size: file.size,
       type: file.type,
       access: file.access,
+      folderId: file.folderId,
       createdAt: file.createdAt,
       updatedAt: file.updatedAt,
     }));

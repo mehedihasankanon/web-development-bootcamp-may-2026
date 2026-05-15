@@ -94,13 +94,20 @@ export default function DashboardPage() {
     toastTimer.current = setTimeout(() => setToast(null), 2600);
   };
 
-  const fetchFiles = async () => {
+  const fetchFiles = async (folderId = currentFolderId) => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await api.get(`${FILES_API_BASE}/get-all`);
-      setFiles(Array.isArray(response.data) ? response.data : []);
+      const response = await api.get(`${FILES_API_BASE}/get-all`, {
+        params: { folderId: folderId || "root" },
+      });
+      const fetched = Array.isArray(response.data) ? response.data : [];
+      setFiles((prev) => {
+        const map = new Map(prev.map((f) => [f.id, f]));
+        fetched.forEach((f) => map.set(f.id, f));
+        return Array.from(map.values());
+      });
     } catch (err) {
       setError(
         err?.response?.data?.message ||
@@ -111,13 +118,20 @@ export default function DashboardPage() {
     }
   };
 
-  const fetchFolders = async () => {
+  const fetchFolders = async (parentId = currentFolderId) => {
     setFoldersLoading(true);
     setFolderFetchError("");
 
     try {
-      const response = await api.get(`${FOLDERS_API_BASE}/get-all`);
-      setFolders(Array.isArray(response.data) ? response.data : []);
+      const response = await api.get(`${FOLDERS_API_BASE}/get-all`, {
+        params: { parentId: parentId || "root" },
+      });
+      const fetched = Array.isArray(response.data) ? response.data : [];
+      setFolders((prev) => {
+        const map = new Map(prev.map((f) => [f.id, f]));
+        fetched.forEach((f) => map.set(f.id, f));
+        return Array.from(map.values());
+      });
     } catch (err) {
       setFolderFetchError(
         err?.response?.data?.message ||
@@ -210,14 +224,14 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchFiles();
-    fetchFolders();
+    fetchFiles(currentFolderId);
+    fetchFolders(currentFolderId);
     return () => {
       if (toastTimer.current) {
         clearTimeout(toastTimer.current);
       }
     };
-  }, []);
+  }, [currentFolderId]);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {

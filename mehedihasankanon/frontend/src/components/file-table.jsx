@@ -65,6 +65,7 @@ const getFileIcon = (file) => {
   return File;
 };
 
+
 export function FileTable({ files, onCopyLink, onToggleAccess, onDelete }) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-800 bg-black/30">
