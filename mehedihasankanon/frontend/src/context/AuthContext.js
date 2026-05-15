@@ -44,9 +44,9 @@ export function AuthProvider({ children }) {
     if (savedToken) {
       setToken(savedToken);
       api
-        .get("/users/profile")
+        .get("/auth/profile")
         .then((res) => {
-          setUser(res.data);
+          setUser(res.data?.user ?? null);
         })
         .catch(() => {
           localStorage.removeItem("token");

@@ -1,9 +1,29 @@
 import { createUploadthing } from "uploadthing/express";
 import { UTApi } from "uploadthing/server";
+import jwt from "jsonwebtoken";
 
 const f = createUploadthing();
 
 import { prisma } from "../database/db.js";
+import { JWT_SECRET } from "../middleware/jwt.js";
+
+const utapi = new UTApi();
+
+const getHeaderValue = (req, key) => {
+  const value = req.headers?.[key];
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0];
+  return value;
+};
+
+const getTokenFromRequest = (req) => {
+  const authHeader =
+    getHeaderValue(req, "authorization") ||
+    getHeaderValue(req, "Authorization");
+  if (!authHeader) return null;
+  const [, token] = authHeader.split(" ");
+  return token || null;
+};
 
 export default {
   fileUploader: f({
@@ -13,30 +33,53 @@ export default {
     text: { maxFileSize: "100KB", maxFileCount: 1 },
     pdf: { maxFileSize: "6MB", maxFileCount: 1 },
     audio: { maxFileSize: "8MB", maxFileCount: 1 },
-  }).onUploadComplete(
-    // this acts as a webhook that prompts the ORM to store the metadata
-    // in the database as per our schema design
+  })
+    .middleware(async ({ req }) => {
+      const token = getTokenFromRequest(req);
+      if (!token) {
+        throw new Error("Unauthorized");
+      }
 
-    async ({ req, metadata, file }) => {
-      console.log("Upload completed", file);
+      let decoded;
 
       try {
-        await prisma.file.create({
-          data: {
-            name: file.name,
-            fileKey: file.key,
-            url: file.url,
-            size: file.size,
-            type: file.type,
-            ownerId: req.user.id, // we pass this from the frontend when we initialize the upload
-          },
-        });
+        decoded = jwt.verify(token, JWT_SECRET);
       } catch (error) {
-        console.log("File upload failed", error);
-        throw new Error("Failed to save file to database");
+        throw new Error("Unauthorized");
       }
-    },
-  ),
+      const folderHeader = getHeaderValue(req, "x-folder-id");
+      const folderId = folderHeader ? folderHeader.toString() : null;
+
+      return {
+        userId: decoded.id,
+        folderId: folderId || null,
+      };
+    })
+    .onUploadComplete(
+      // this acts as a webhook that prompts the ORM to store the metadata
+      // in the database as per our schema design
+
+      async ({ metadata, file }) => {
+        console.log("Upload completed", file);
+
+        try {
+          await prisma.file.create({
+            data: {
+              name: file.name,
+              fileKey: file.key,
+              url: file.url,
+              size: file.size,
+              type: file.type,
+              ownerId: metadata.userId,
+              folderId: metadata.folderId || null,
+            },
+          });
+        } catch (error) {
+          console.log("File upload failed", error);
+          throw new Error("Failed to save file to database");
+        }
+      },
+    ),
 };
 
 export const deleteFileFromUploadThing = async (fileKey) => {

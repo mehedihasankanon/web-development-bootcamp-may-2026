@@ -7,6 +7,7 @@ import { createRouteHandler } from "uploadthing/express";
 import uploadRouter from "./routes/uploadRouter.js";
 import authRouter from "./routes/authRouter.js";
 import fileRouter from "./routes/fileRouter.js";
+import folderRouter from "./routes/folderRouter.js";
 
 import { prisma } from "./database/db.js";
 
@@ -37,6 +38,7 @@ app.use(
 
 app.use("/api/auth", authRouter);
 app.use("/api/files", fileRouter);
+app.use("/api/folders", folderRouter);
 
 // ==========
 

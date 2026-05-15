@@ -92,7 +92,7 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onDelete }) {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-black/40">
-                        <Icon className="h-4 w-4 text-primary" />
+                        <Icon className="h-4 w-4 text-zinc-200" />
                       </span>
                       <div>
                         <p className="text-sm font-medium text-white">
@@ -114,8 +114,8 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onDelete }) {
                     <span
                       className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
                         isPublic
-                          ? "border-primary/40 bg-primary/10 text-primary"
-                          : "border-zinc-700 bg-black/50 text-zinc-300"
+                          ? "border-white/30 bg-white/10 text-white"
+                          : "border-zinc-700 bg-black/50 text-zinc-400"
                       }`}
                     >
                       {isPublic ? "Public" : "Private"}
@@ -126,7 +126,7 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onDelete }) {
                       <button
                         type="button"
                         onClick={() => onCopyLink?.(file)}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-zinc-600 hover:text-white"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white"
                       >
                         <Copy className="h-3.5 w-3.5" />
                         Copy Link
@@ -134,7 +134,7 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onDelete }) {
                       <button
                         type="button"
                         onClick={() => onToggleAccess?.(file)}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-zinc-600 hover:text-white"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white"
                       >
                         {isPublic ? (
                           <Lock className="h-3.5 w-3.5" />
@@ -151,7 +151,7 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onDelete }) {
                           );
                           if (confirmed) onDelete?.(file);
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-red-500/40 bg-black/40 px-2.5 py-1 text-xs text-red-300 transition hover:border-red-400 hover:text-red-200"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-black/40 px-2.5 py-1 text-xs text-zinc-400 transition hover:border-white/40 hover:text-white"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         Delete

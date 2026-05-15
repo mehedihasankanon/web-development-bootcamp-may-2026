@@ -5,7 +5,8 @@ import path from "path";
 
 const __dirname = path.resolve();
 
-import { PrismaClient } from "@prisma/client";
+import pkg from "@prisma/client";
+const { PrismaClient } = pkg;
 import { PrismaNeon } from "@prisma/adapter-neon";
 
 dotenv.config({
