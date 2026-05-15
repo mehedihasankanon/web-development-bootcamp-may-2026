@@ -51,6 +51,7 @@ export function AuthProvider({ children }) {
         .catch(() => {
           localStorage.removeItem("token");
           setToken(null);
+          setupDevBundler(null);
         })
         .finally(() => setLoading(false));
     } else {
