@@ -1,16 +1,14 @@
 {
   /*
     Add controllers: listFiles(userId), toggleFileAccess(fileId, userId), deleteFile(fileId, userId)
-    Add routes to uploadRouter.js:
-    GET /api/upload/files — List user's files (protected)
-    PATCH /api/upload/:fileId/access — Toggle PRIVATE↔PUBLIC (protected)
-    DELETE /api/upload/:fileId — Delete file from DB & UploadThing (protected)
+    Add routes to fileRouter.js:
+    GET /api/files/get-all — List user's files (protected)
+    PATCH /api/files/toggle-access/:fileId — Toggle PRIVATE↔PUBLIC (protected)
+    DELETE /api/files/delete/:fileId — Delete file from DB & UploadThing (protected)
     */
 }
 
-
-
-    /*
+/*
      
     model File {
     id         String         @id @default(uuid())
@@ -67,62 +65,59 @@ export const listFiles = async (req, res) => {
 
 // toggle file access
 export const toggleFileAccess = async (req, res) => {
+  try {
+    const fileId = req.params.fileId;
 
-    try {
-        
-        const fileId = req.params.fileId;
+    // find file
+    const file = await prisma.file.findUnique({
+      where: { id: fileId },
+    });
 
-        // find file
-        const file = await prisma.file.findUnique({
-            where: { id: fileId },
-        });
-
-        if (!file) {
-            return res.status(404).json({ error: "File not found" });
-        }
-
-        // toggle access level
-        const newAccess = file.access === "PRIVATE" ? "PUBLIC" : "PRIVATE";
-
-        await prisma.file.update({
-            where: { id: fileId },
-            data: { access: newAccess },
-        });
-
-        res.json({ message: "File access updated successfully", access: newAccess });
-
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
     }
 
+    // toggle access level
+    const newAccess = file.access === "PRIVATE" ? "PUBLIC" : "PRIVATE";
+
+    await prisma.file.update({
+      where: { id: fileId },
+      data: { access: newAccess },
+    });
+
+    res.json({
+      message: "File access updated successfully",
+      access: newAccess,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 // delete file
 export const deleteFile = async (req, res) => {
+  try {
+    const fileId = req.params.fileId;
 
-    try {
-        const fileId = req.params.fileId;
+    // find file
+    const file = await prisma.file.findUnique({
+      where: { id: fileId },
+    });
 
-        // find file
-        const file = await prisma.file.findUnique({
-            where: { id: fileId },
-        });
-
-        if (!file) {
-            return res.status(404).json({ error: "File not found" });
-        }
-
-        // delete from UploadThing
-        await deleteFileFromUploadThing(file.fileKey);
-
-        // delete from DB
-        await prisma.file.delete({
-            where: { id: fileId },
-        });
-
-        res.json({ message: "File deleted successfully" });
-
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
     }
+
+    // delete from UploadThing
+    await deleteFileFromUploadThing(file.fileKey);
+
+    // delete from DB
+    await prisma.file.delete({
+      where: { id: fileId },
+    });
+
+    res.json({ message: "File deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };

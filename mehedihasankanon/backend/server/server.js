@@ -25,14 +25,51 @@ const port = process.env.PORT || 5001;
 // for each file upload, uploadthing server will send a request to this path with a payload
 // so on that callback request we save the file to DB using prisma
 
+const uploadthingPath = "/api/uploadthing";
+const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
+const callbackUrl = backendUrl ? `${backendUrl}${uploadthingPath}` : undefined;
+const uploadthingToken = process.env.UPLOADTHING_TOKEN;
+if (!uploadthingToken) {
+  console.warn("UPLOADTHING_TOKEN is not set. UploadThing uploads will fail.");
+}
+const isDev = process.env.NODE_ENV !== "production";
+const uploadthingFetch = async (input, init) => {
+  const response = await fetch(input, init);
+
+  if (!response.ok) {
+    let bodyText = "";
+    try {
+      bodyText = await response.clone().text();
+    } catch (error) {
+      bodyText = "<unable to read response body>";
+    }
+
+    const url = typeof input === "string" ? input : input?.toString?.();
+    console.warn("UploadThing API error response:", {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      body: bodyText,
+    });
+  }
+
+  return response;
+};
+const uploadthingConfig = {
+  ...(uploadthingToken ? { token: uploadthingToken } : {}),
+  ...(callbackUrl ? { callbackUrl } : {}),
+  logLevel: "Debug",
+  fetch: uploadthingFetch,
+  isDev,
+};
+
 app.use(
-  "/api/upload",
+  uploadthingPath,
   createRouteHandler({
     router: uploadRouter,
-    config: {
-      // uploadthing server calls this url after upload is complete
-      callbackUrl: `${process.env.BACKEND_URL}/api/upload`,
-    },
+    config: Object.keys(uploadthingConfig).length
+      ? uploadthingConfig
+      : undefined,
   }),
 );
 

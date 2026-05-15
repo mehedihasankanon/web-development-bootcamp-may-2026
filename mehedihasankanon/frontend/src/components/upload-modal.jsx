@@ -75,7 +75,7 @@ export function UploadModal({
         <div className="rounded-xl border border-zinc-800 bg-black/40 p-4">
           <UploadDropzone
             endpoint={ENDPOINT}
-            headers={buildHeaders}
+            headers={buildHeaders()}
             onUploadBegin={() => {
               setError("");
               setStatus("uploading");
@@ -106,7 +106,7 @@ export function UploadModal({
         <div className="mt-4">
           <UploadButton
             endpoint={ENDPOINT}
-            headers={buildHeaders}
+            headers={buildHeaders()}
             onUploadBegin={() => {
               setError("");
               setStatus("uploading");

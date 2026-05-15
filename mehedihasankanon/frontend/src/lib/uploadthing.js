@@ -12,7 +12,7 @@ const normalizeApiBase = (baseUrl) => {
 };
 
 const API_BASE = normalizeApiBase(process.env.NEXT_PUBLIC_API_URL);
-const UPLOAD_URL = `${API_BASE}/upload`;
+const UPLOADTHING_URL = `${API_BASE}/uploadthing`;
 
-export const UploadButton = generateUploadButton({ url: UPLOAD_URL });
-export const UploadDropzone = generateUploadDropzone({ url: UPLOAD_URL });
+export const UploadButton = generateUploadButton({ url: UPLOADTHING_URL });
+export const UploadDropzone = generateUploadDropzone({ url: UPLOADTHING_URL });

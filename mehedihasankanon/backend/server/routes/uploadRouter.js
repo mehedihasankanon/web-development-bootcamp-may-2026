@@ -1,5 +1,5 @@
 import { createUploadthing } from "uploadthing/express";
-import { UTApi } from "uploadthing/server";
+import { UTApi, UploadThingError } from "uploadthing/server";
 import jwt from "jsonwebtoken";
 
 const f = createUploadthing();
@@ -7,7 +7,13 @@ const f = createUploadthing();
 import { prisma } from "../database/db.js";
 import { JWT_SECRET } from "../middleware/jwt.js";
 
-const utapi = new UTApi();
+const uploadthingApiKey = process.env.UPLOADTHING_SECRET;
+if (!uploadthingApiKey) {
+  console.warn("UPLOADTHING_SECRET is not set. UTApi operations will fail.");
+}
+const utapi = uploadthingApiKey
+  ? new UTApi({ apiKey: uploadthingApiKey })
+  : new UTApi();
 
 const getHeaderValue = (req, key) => {
   const value = req.headers?.[key];
@@ -37,7 +43,7 @@ export default {
     .middleware(async ({ req }) => {
       const token = getTokenFromRequest(req);
       if (!token) {
-        throw new Error("Unauthorized");
+        throw new UploadThingError("Unauthorized");
       }
 
       let decoded;
@@ -45,7 +51,7 @@ export default {
       try {
         decoded = jwt.verify(token, JWT_SECRET);
       } catch (error) {
-        throw new Error("Unauthorized");
+        throw new UploadThingError("Unauthorized");
       }
       const folderHeader = getHeaderValue(req, "x-folder-id");
       const folderId = folderHeader ? folderHeader.toString() : null;
@@ -61,6 +67,10 @@ export default {
 
       async ({ metadata, file }) => {
         console.log("Upload completed", file);
+        console.log("Upload metadata", {
+          userId: metadata?.userId,
+          folderId: metadata?.folderId ?? null,
+        });
 
         try {
           await prisma.file.create({
@@ -75,7 +85,11 @@ export default {
             },
           });
         } catch (error) {
-          console.log("File upload failed", error);
+          console.log("File upload failed", {
+            message: error?.message,
+            code: error?.code,
+            meta: error?.meta,
+          });
           throw new Error("Failed to save file to database");
         }
       },
