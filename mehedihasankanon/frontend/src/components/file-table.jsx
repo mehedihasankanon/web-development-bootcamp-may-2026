@@ -13,6 +13,7 @@ import {
   Trash2,
   Unlock,
   Eye,
+  Download,
 } from "lucide-react";
 
 const formatBytes = (bytes) => {
@@ -162,6 +163,16 @@ export function FileTable({
                           View
                         </button>
                       )}
+                      <a
+                        href={file.url}
+                        download={file.name}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white hover:shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Download
+                      </a>
                       <button
                         type="button"
                         onClick={() => {

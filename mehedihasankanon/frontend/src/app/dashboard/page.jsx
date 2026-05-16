@@ -59,7 +59,9 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [folderFetchError, setFolderFetchError] = useState("");
   const [folderFormError, setFolderFormError] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
@@ -287,6 +289,28 @@ export default function DashboardPage() {
     }
   }, [passwordOpen]);
 
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (!searchQuery.trim()) {
+        setIsSearching(false);
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const response = await api.get(`${FILES_API_BASE}/search`, {
+          params: { q: searchQuery },
+        });
+        setSearchResults(Array.isArray(response.data) ? response.data : []);
+      } catch (err) {
+        console.error("Search error:", err);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
   const folderById = useMemo(() => {
     return new Map(folders.map((folder) => [folder.id, folder]));
   }, [folders]);
@@ -317,20 +341,20 @@ export default function DashboardPage() {
   }, [files, currentFolderId]);
 
   const filteredFolders = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = searchQuery.trim().toLowerCase();
     if (!term) return visibleFolders;
     return visibleFolders.filter((folder) =>
       (folder.name || "").toLowerCase().includes(term),
     );
-  }, [visibleFolders, search]);
+  }, [visibleFolders, searchQuery]);
 
   const filteredFiles = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = searchQuery.trim().toLowerCase();
     if (!term) return visibleFiles;
     return visibleFiles.filter((file) =>
       (file.name || "").toLowerCase().includes(term),
     );
-  }, [visibleFiles, search]);
+  }, [visibleFiles, searchQuery]);
 
   const passwordReqs = checkRequirements(newPassword);
   const passwordValid = meetsAll(newPassword);
@@ -384,6 +408,11 @@ export default function DashboardPage() {
           item.id === file.id ? { ...item, access: updatedAccess } : item,
         ),
       );
+      setSearchResults((prev) =>
+        prev.map((item) =>
+          item.id === file.id ? { ...item, access: updatedAccess } : item,
+        ),
+      );
       showToast("Access updated.");
     } catch (err) {
       setFiles(previous);
@@ -395,6 +424,9 @@ export default function DashboardPage() {
     try {
       const response = await api.patch(`${FILES_API_BASE}/rename/${file.id}`, { name: newName });
       setFiles((prev) =>
+        prev.map((item) => (item.id === file.id ? { ...item, name: response?.data?.name || newName } : item)),
+      );
+      setSearchResults((prev) =>
         prev.map((item) => (item.id === file.id ? { ...item, name: response?.data?.name || newName } : item)),
       );
       showToast("File renamed.");
@@ -431,15 +463,18 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (file) => {
-    const previous = files;
+    const previousFiles = files;
+    const previousSearch = searchResults;
 
     setFiles((prev) => prev.filter((item) => item.id !== file.id));
+    setSearchResults((prev) => prev.filter((item) => item.id !== file.id));
 
     try {
       await api.delete(`${FILES_API_BASE}/delete/${file.id}`);
       showToast("File deleted.");
     } catch (err) {
-      setFiles(previous);
+      setFiles(previousFiles);
+      setSearchResults(previousSearch);
       showToast("Failed to delete file.", "error");
     }
   };
@@ -504,11 +539,20 @@ export default function DashboardPage() {
               <div className="relative w-full md:max-w-md">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                 <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search files"
-                  className="w-full rounded-lg border border-zinc-800 bg-black/50 py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-white/40"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search all files..."
+                  className="w-full rounded-lg border border-zinc-800 bg-black/50 py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-white/40"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
 
               <div className="relative" ref={optionsRef}>
@@ -587,125 +631,159 @@ export default function DashboardPage() {
 
             {!loading && !error && (
               <div className="space-y-8">
-                {foldersLoading && (
-                  <p className="text-xs text-zinc-500">Loading folders...</p>
-                )}
-                {!foldersLoading && folderFetchError && (
-                  <p className="text-xs text-red-400">{folderFetchError}</p>
-                )}
-
-                {!foldersLoading && !folderFetchError && filteredFolders.length > 0 && (
+                {isSearching ? (
                   <div>
                     <p className="text-xs uppercase tracking-[0.35em] text-zinc-600">
-                      Folders
-                    </p>
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {filteredFolders.map((folder) => (
-                        <div
-                          key={folder.id}
-                          className="relative flex items-center justify-between rounded-xl border border-zinc-800 bg-black/30 px-4 py-3 transition hover:border-white/40 group"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => setCurrentFolderId(folder.id)}
-                            className="flex flex-1 items-center gap-3 text-left"
-                          >
-                            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-800 bg-black/40">
-                              <Folder className="h-5 w-5 text-zinc-200" />
-                            </span>
-                            <div>
-                              <p className="text-sm font-semibold text-white">
-                                {folder.name}
-                              </p>
-                              <p className="text-xs text-zinc-500">
-                                {folder.parentId ? "Subfolder" : "Folder"}
-                              </p>
-                            </div>
-                          </button>
-                          <div className="relative folder-options-container">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFolderOptionsOpen(folderOptionsOpen === folder.id ? null : folder.id);
-                              }}
-                              className="p-2 text-zinc-500 hover:text-white transition"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
-                            {folderOptionsOpen === folder.id && (
-                              <div className="absolute right-0 top-full mt-2 w-32 z-10 overflow-hidden rounded-lg border border-zinc-800 bg-black/90 shadow-lg">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setFolderOptionsOpen(null);
-                                    const newName = window.prompt("Enter new folder name:", folder.name);
-                                    if (newName && newName.trim() !== folder.name) {
-                                      handleRenameFolder(folder, newName.trim());
-                                    }
-                                  }}
-                                  className="flex w-full items-center px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/10 hover:text-white"
-                                >
-                                  Rename
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setFolderOptionsOpen(null);
-                                    handleDeleteFolder(folder);
-                                  }}
-                                  className="flex w-full items-center px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {!foldersLoading &&
-                  !folderFetchError &&
-                  filteredFolders.length === 0 &&
-                  filteredFiles.length === 0 && (
-                    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-zinc-800 bg-black/30 px-6 py-14 text-center">
-                      <Inbox className="h-8 w-8 text-white" />
-                      <div>
-                        <p className="text-sm font-semibold text-white">
-                          {search.trim()
-                            ? "No items match your search"
-                            : "This folder is empty"}
-                        </p>
-                        <p className="mt-1 text-xs text-zinc-500">
-                          {search.trim()
-                            ? "Try a different keyword."
-                            : "Upload or create a folder to get started."}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                {filteredFiles.length > 0 && (
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.35em] text-zinc-600">
-                      Files
+                      Search Results
                     </p>
                     <div className="mt-4">
-                      <FileTable
-                        files={filteredFiles}
-                        onCopyLink={handleCopyLink}
-                        onToggleAccess={handleToggleAccess}
-                        onRename={handleRenameFile}
-                        onDelete={handleDelete}
-                        onView={handleViewFile}
-                      />
+                      {searchResults.length > 0 ? (
+                        <FileTable
+                          files={searchResults}
+                          onCopyLink={handleCopyLink}
+                          onToggleAccess={handleToggleAccess}
+                          onRename={handleRenameFile}
+                          onDelete={handleDelete}
+                          onView={handleViewFile}
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-zinc-800 bg-black/30 px-6 py-14 text-center">
+                          <Inbox className="h-8 w-8 text-white" />
+                          <div>
+                            <p className="text-sm font-semibold text-white">
+                              No files match your search
+                            </p>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              Try a different keyword.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
+                ) : (
+                  <>
+                    {foldersLoading && (
+                      <p className="text-xs text-zinc-500">Loading folders...</p>
+                    )}
+                    {!foldersLoading && folderFetchError && (
+                      <p className="text-xs text-red-400">{folderFetchError}</p>
+                    )}
+
+                    {!foldersLoading && !folderFetchError && filteredFolders.length > 0 && (
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.35em] text-zinc-600">
+                          Folders
+                        </p>
+                        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {filteredFolders.map((folder) => (
+                            <div
+                              key={folder.id}
+                              className="relative flex items-center justify-between rounded-xl border border-zinc-800 bg-black/30 px-4 py-3 transition hover:border-white/40 group"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setCurrentFolderId(folder.id)}
+                                className="flex flex-1 items-center gap-3 text-left"
+                              >
+                                <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-800 bg-black/40">
+                                  <Folder className="h-5 w-5 text-zinc-200" />
+                                </span>
+                                <div>
+                                  <p className="text-sm font-semibold text-white">
+                                    {folder.name}
+                                  </p>
+                                  <p className="text-xs text-zinc-500">
+                                    {folder.parentId ? "Subfolder" : "Folder"}
+                                  </p>
+                                </div>
+                              </button>
+                              <div className="relative folder-options-container">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFolderOptionsOpen(folderOptionsOpen === folder.id ? null : folder.id);
+                                  }}
+                                  className="p-2 text-zinc-500 hover:text-white transition"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                                {folderOptionsOpen === folder.id && (
+                                  <div className="absolute right-0 top-full mt-2 w-32 z-10 overflow-hidden rounded-lg border border-zinc-800 bg-black/90 shadow-lg">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setFolderOptionsOpen(null);
+                                        const newName = window.prompt("Enter new folder name:", folder.name);
+                                        if (newName && newName.trim() !== folder.name) {
+                                          handleRenameFolder(folder, newName.trim());
+                                        }
+                                      }}
+                                      className="flex w-full items-center px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/10 hover:text-white"
+                                    >
+                                      Rename
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setFolderOptionsOpen(null);
+                                        handleDeleteFolder(folder);
+                                      }}
+                                      className="flex w-full items-center px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {!foldersLoading &&
+                      !folderFetchError &&
+                      filteredFolders.length === 0 &&
+                      filteredFiles.length === 0 && (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-zinc-800 bg-black/30 px-6 py-14 text-center">
+                          <Inbox className="h-8 w-8 text-white" />
+                          <div>
+                            <p className="text-sm font-semibold text-white">
+                              {searchQuery.trim()
+                                ? "No items match your search"
+                                : "This folder is empty"}
+                            </p>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {searchQuery.trim()
+                                ? "Try a different keyword."
+                                : "Upload or create a folder to get started."}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                    {filteredFiles.length > 0 && (
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.35em] text-zinc-600">
+                          Files
+                        </p>
+                        <div className="mt-4">
+                          <FileTable
+                            files={filteredFiles}
+                            onCopyLink={handleCopyLink}
+                            onToggleAccess={handleToggleAccess}
+                            onRename={handleRenameFile}
+                            onDelete={handleDelete}
+                            onView={handleViewFile}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

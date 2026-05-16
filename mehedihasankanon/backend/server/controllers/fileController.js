@@ -208,3 +208,30 @@ export const getShareFile = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const searchFiles = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q) {
+      return res.json([]);
+    }
+
+    const files = await prisma.file.findMany({
+      where: {
+        ownerId: req.user.id,
+        name: {
+          contains: q,
+          mode: "insensitive",
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    res.json(files);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
