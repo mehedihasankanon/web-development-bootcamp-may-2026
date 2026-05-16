@@ -443,6 +443,19 @@ export default function DashboardPage() {
       showToast("Failed to delete file.", "error");
     }
   };
+  
+  const handleViewFile = async (file) => {
+    try {
+      // get the freshest link from the share API
+      const response = await api.get(`${FILES_API_BASE}/share/${file.id}`);
+      const freshFile = response.data;
+      if (freshFile && freshFile.url) {
+        window.open(freshFile.url, "_blank");
+      }
+    } catch (err) {
+      showToast("Could not open file.", "error");
+    }
+  };
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -689,6 +702,7 @@ export default function DashboardPage() {
                         onToggleAccess={handleToggleAccess}
                         onRename={handleRenameFile}
                         onDelete={handleDelete}
+                        onView={handleViewFile}
                       />
                     </div>
                   </div>

@@ -12,6 +12,7 @@ import {
   Lock,
   Trash2,
   Unlock,
+  Eye,
 } from "lucide-react";
 
 const formatBytes = (bytes) => {
@@ -66,8 +67,26 @@ const getFileIcon = (file) => {
   return File;
 };
 
+const canViewInBrowser = (type) => {
+  if (!type) return false;
+  const t = type.toLowerCase();
+  return (
+    t.startsWith("image/") ||
+    t.startsWith("video/") ||
+    t.startsWith("text/") ||
+    t.includes("pdf") ||
+    t.startsWith("audio/")
+  );
+};
 
-export function FileTable({ files, onCopyLink, onToggleAccess, onRename, onDelete }) {
+export function FileTable({
+  files,
+  onCopyLink,
+  onToggleAccess,
+  onRename,
+  onDelete,
+  onView,
+}) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-800 bg-black/30">
       <div className="overflow-x-auto">
@@ -128,11 +147,21 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onRename, onDelet
                       <button
                         type="button"
                         onClick={() => onCopyLink?.(file)}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white hover:shadow-[0_0_10px_rgba(255,255,255,0.1)]"
                       >
                         <Copy className="h-3.5 w-3.5" />
                         Copy Link
                       </button>
+                      {canViewInBrowser(file.type) && (
+                        <button
+                          type="button"
+                          onClick={() => onView?.(file)}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white hover:shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          View
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
@@ -141,7 +170,7 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onRename, onDelet
                             onRename?.(file, newName.trim());
                           }
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white hover:shadow-[0_0_10px_rgba(255,255,255,0.1)]"
                       >
                         <Edit className="h-3.5 w-3.5" />
                         Rename
@@ -149,7 +178,7 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onRename, onDelet
                       <button
                         type="button"
                         onClick={() => onToggleAccess?.(file)}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-black/40 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white/40 hover:text-white hover:shadow-[0_0_10px_rgba(255,255,255,0.1)]"
                       >
                         {isPublic ? (
                           <Lock className="h-3.5 w-3.5" />
@@ -166,7 +195,7 @@ export function FileTable({ files, onCopyLink, onToggleAccess, onRename, onDelet
                           );
                           if (confirmed) onDelete?.(file);
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-black/40 px-2.5 py-1 text-xs text-zinc-400 transition hover:border-white/40 hover:text-white"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-black/40 px-2.5 py-1 text-xs text-zinc-400 transition hover:border-white/40 hover:text-white hover:shadow-[0_0_10px_rgba(255,255,255,0.1)]"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         Delete

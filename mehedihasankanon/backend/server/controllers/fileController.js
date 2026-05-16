@@ -35,6 +35,8 @@
 
 import { prisma } from "../database/db.js";
 import { deleteFileFromUploadThing, renameFileInUploadThing } from "../routes/uploadRouter.js";
+import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "../middleware/jwt.js";
 
 // list all files
 export const listFiles = async (req, res) => {
@@ -162,6 +164,46 @@ export const renameFile = async (req, res) => {
     });
 
     res.json({ message: "File renamed successfully", name: name.trim() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getShareFile = async (req, res) => {
+  try {
+    const fileId = req.params.id;
+
+    const file = await prisma.file.findUnique({
+      where: { id: fileId },
+    });
+
+    if (!file) {
+      return res.status(404).json({ error: "Stash not found" });
+    }
+
+    if (file.access === "PUBLIC") {
+      return res.json(file);
+    }
+
+    // file is PRIVATE
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (!token) {
+      return res.status(403).json({ error: "This stash is private or the link has changed." });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (decoded.id === file.ownerId) {
+        return res.json({ ...file, isOwner: true });
+      } else {
+        return res.status(403).json({ error: "This stash is private or the link has changed." });
+      }
+    } catch (err) {
+      return res.status(403).json({ error: "This stash is private or the link has changed." });
+    }
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
