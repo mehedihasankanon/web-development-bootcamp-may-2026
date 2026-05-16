@@ -1,12 +1,13 @@
-import { Header } from '@/components/header'
-import { AuthCard } from '@/components/auth/auth-card'
+import { Suspense } from "react";
+import { Header } from "@/components/header";
+import { AuthCard } from "@/components/auth/auth-card";
 
 export const metadata = {
-  title: 'Auth — Fylestash',
-  description: 'Sign in or create a Fylestash account.',
-}
+  title: "Auth — Fylestash",
+  description: "Sign in or create a Fylestash account.",
+};
 
-export default function AuthPage() {
+function AuthPageContent() {
   return (
     <main className="min-h-screen bg-background">
       <Header />
@@ -17,5 +18,13 @@ export default function AuthPage() {
         </div>
       </div>
     </main>
-  )
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="text-zinc-500">Loading...</div>}>
+      <AuthPageContent />
+    </Suspense>
+  );
 }

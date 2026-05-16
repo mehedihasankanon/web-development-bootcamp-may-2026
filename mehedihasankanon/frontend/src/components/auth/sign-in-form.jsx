@@ -7,7 +7,7 @@ import { Mail, Lock } from "lucide-react";
 import { fieldClass } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
-export function SignInForm() {
+export function SignInForm({ onForgotPassword }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -55,21 +55,32 @@ export function SignInForm() {
       </div>
 
       {/* Password */}
-      <div className="relative">
-        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+      <div className="space-y-1.5">
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            setError(false);
-          }}
-          className={fieldClass(error)}
-          required
-          autoComplete="current-password"
-        />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(false);
+            }}
+            className={fieldClass(error)}
+            required
+            autoComplete="current-password"
+          />
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-[10px] uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
+          >
+            Forgot password?
+          </button>
+        </div>
       </div>
 
       <button
@@ -84,3 +95,4 @@ export function SignInForm() {
     </form>
   );
 }
+
